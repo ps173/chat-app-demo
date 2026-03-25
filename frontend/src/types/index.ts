@@ -12,6 +12,12 @@ export interface Chatroom {
   createdById: string;
   createdBy: { firstName: string; lastName: string };
   _count: { participants: number };
+  messages?: Array<{
+    id: string;
+    content: string;
+    createdAt: string;
+    sender: { firstName: string; lastName: string };
+  }>;
 }
 
 export interface UserSearchResult {

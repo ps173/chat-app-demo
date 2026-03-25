@@ -1,73 +1,74 @@
-# React + TypeScript + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React SPA with Redux Toolkit, React Router v7, and Socket.IO client.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Prerequisites
 
-## React Compiler
+- Node.js 18+
+- Backend server running (see [`../backend/README.md`](../backend/README.md))
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Installation
 
-## Expanding the ESLint configuration
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+2. **Configure environment** — create a `.env` file:
+   ```env
+   VITE_API_BASE_URL=http://localhost:4000/api/v1
+   VITE_SOCKET_URL=http://localhost:4000
+   ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+3. **Start the dev server**
+   ```bash
+   npm run dev
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+The app runs at http://localhost:3000.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Commands
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Vite dev server with HMR |
+| `npm run build` | TypeScript check + production build |
+| `npm run lint` | ESLint |
+| `npm run preview` | Preview the production build locally |
+
+## Architecture
+
+### State Management
+
+Redux Toolkit slices in `src/features/`:
+
+| Slice | Responsibility |
+|---|---|
+| `auth` | Current user, JWT token, login/register state |
+| `chat` | Active room, messages, socket connection status |
+| `chatrooms` | Chatroom list, selected room |
+
+### Routing
+
+React Router v7 configured in `src/routes/`. A `PrivateRoute` guard redirects unauthenticated users to `/login`.
+
+### Socket Lifecycle
+
+- `src/features/chat/socketService.ts` — singleton Socket.IO client, connects with the JWT token as a handshake credential
+- `src/features/chat/useSocket.ts` — React hook that manages connect/disconnect with component lifecycle and dispatches incoming socket events to the Redux store
+
+### API Layer
+
+Axios-based utilities in `src/api/` map to backend REST endpoints. The auth token is injected via a request interceptor.
+
+### Feature Structure
+
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+src/features/
+├── auth/       # Login, register forms + auth slice
+├── chat/       # ChatPanel, message list, socket service + hook
+├── chatrooms/  # Chatroom list, creation
+└── users/      # User profile
 ```

@@ -24,6 +24,11 @@ export function leaveChatroom(roomId: string): Promise<{ message: string }> {
   return request<{ message: string }>(`/chatrooms/${roomId}/leave`, { method: 'POST' });
 }
 
+export function discoverChatrooms(search?: string): Promise<Chatroom[]> {
+  const query = search ? `?search=${encodeURIComponent(search)}` : '';
+  return request<Chatroom[]>(`/chatrooms/discover${query}`);
+}
+
 export function findOrCreateDirectRoom(targetUserId: string): Promise<Chatroom> {
   return request<Chatroom>('/chatrooms/direct', {
     method: 'POST',

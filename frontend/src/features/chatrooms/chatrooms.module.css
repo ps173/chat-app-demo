@@ -195,3 +195,109 @@
   color: #dc2626;
   font-size: 0.8rem;
 }
+
+/* Discover Rooms Modal */
+.discoverModal {
+  background: #fff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.discoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.closeBtn:hover {
+  color: #111;
+}
+
+.discoverSearchWrap {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.discoverSearchInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  font-size: 0.875rem;
+  background: #f9fafb;
+  outline: none;
+  color: #111;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.discoverSearchInput:focus {
+  border-color: #4f46e5;
+  background: #fff;
+}
+
+.discoverList {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.discoverItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  gap: 1rem;
+}
+
+.discoverItem:hover {
+  background: #f9fafb;
+}
+
+.discoverItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.discoverItemName {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discoverItemMeta {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.discoverHint {
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+}

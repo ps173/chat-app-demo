@@ -1,25 +1,34 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { useParams } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
-import { setMessages, setLoading, clearRoom } from './chatSlice';
-import { setLastMessage } from '../chatrooms/chatroomsSlice';
-import { getMessages } from './chatApi';
-import { useSocket } from './useSocket';
-import Avatar from '../../components/Avatar';
-import styles from './layout.module.css';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
+import { useParams } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../hooks/useAppDispatch";
+import { setMessages, setLoading, clearRoom } from "./chatSlice";
+import { setLastMessage } from "../chatrooms/chatroomsSlice";
+import { getMessages } from "./chatApi";
+import { useSocket } from "./useSocket";
+import Avatar from "../../components/Avatar";
+import styles from "./layout.module.css";
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatDateLabel(iso: string): string {
   const d = new Date(iso);
   const today = new Date();
-  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === today.toDateString()) return "Today";
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString([], { month: 'long', day: 'numeric' });
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString([], { month: "long", day: "numeric" });
 }
 
 export default function ChatPanel() {
@@ -28,30 +37,38 @@ export default function ChatPanel() {
 
   const user = useAppSelector((s) => s.auth.user);
   const { messages, status } = useAppSelector((s) => s.chat);
-  const room = useAppSelector((s) => s.chatrooms.list.find((r) => r.id === roomId));
+  const room = useAppSelector((s) =>
+    s.chatrooms.list.find((r) => r.id === roomId),
+  );
 
   const { sendMessage } = useSocket(roomId!);
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
 
   useEffect(() => {
     dispatch(setLoading());
     getMessages(roomId!)
-      .then((res) => dispatch(setMessages(res)))
+      .then((res) => {
+        dispatch(setMessages(res));
+        const last = res.messages[0];
+        if (last) dispatch(setLastMessage({ roomId: roomId!, message: last }));
+      })
       .catch(() => dispatch(setMessages({ messages: [], nextCursor: null })));
-    return () => { dispatch(clearRoom()); };
+    return () => {
+      dispatch(clearRoom());
+    };
   }, [roomId, dispatch]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   function submit() {
     const trimmed = value.trim();
     if (!trimmed) return;
     sendMessage(trimmed);
-    setValue('');
+    setValue("");
   }
 
   function handleSubmit(e: FormEvent) {
@@ -60,7 +77,10 @@ export default function ChatPanel() {
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      submit();
+    }
   }
 
   if (!user) return null;
@@ -82,22 +102,24 @@ export default function ChatPanel() {
       <div className={styles.chatHeader}>
         {room && (
           <Avatar
-            firstName={room.createdBy.firstName}
-            lastName={room.createdBy.lastName}
+            firstName={room.roomName.split(" ")[0] || " "}
+            lastName={room.roomName.split(" ")[1] || " "}
             size={38}
-            online
+            // online
           />
         )}
         <div>
-          <div className={styles.chatHeaderName}>{room?.roomName ?? '…'}</div>
+          <div className={styles.chatHeaderName}>{room?.roomName ?? "…"}</div>
           <div className={styles.chatHeaderSub}>
-            {room ? `Created by ${room.createdBy.firstName} ${room.createdBy.lastName}` : ''}
+            {room && !room.isDirect
+              ? `Created by ${room.createdBy.firstName} ${room.createdBy.lastName}`
+              : ""}
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      {status === 'loading' ? (
+      {status === "loading" ? (
         <div className={styles.loading}>Loading messages…</div>
       ) : (
         <div className={styles.messages}>
@@ -115,12 +137,25 @@ export default function ChatPanel() {
                       {formatDateLabel(msg.timestamp)}
                     </div>
                   )}
-                  <div className={`${styles.bubbleWrapper} ${isOwn ? styles.own : styles.other}`}>
-                    {!isOwn && <span className={styles.senderName}>{msg.senderName}</span>}
-                    <div className={`${styles.bubble} ${isOwn ? styles.own : styles.other}`}>
-                      {msg.content}
+                  <div
+                    className={`${styles.bubbleWrapper} ${isOwn ? styles.own : styles.other}`}
+                  >
+                    {!isOwn && (
+                      <span className={styles.senderName}>
+                        {msg.senderName}
+                      </span>
+                    )}
+                    <div
+                      className={`${styles.bubble} ${isOwn ? styles.own : styles.other}`}
+                    >
+                      <span className={styles.bubbleText}>{msg.content}</span>
+                      <span
+                        className={`${styles.bubbleTime}${!isOwn ? ` ${styles.other}` : ""}`}
+                      >
+                        {formatTime(msg.timestamp)}
+                      </span>
                     </div>
-                    <span className={styles.bubbleTime}>{formatTime(msg.timestamp)}</span>
+                    {isOwn && <span className={styles.sentLabel}>✓✓ Sent</span>}
                   </div>
                 </div>
               );
@@ -134,8 +169,18 @@ export default function ChatPanel() {
       <form className={styles.inputBar} onSubmit={handleSubmit}>
         <div className={styles.inputWrap}>
           <button type="button" className={styles.iconBtn} tabIndex={-1}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
           </button>
           <input
@@ -147,19 +192,42 @@ export default function ChatPanel() {
             onKeyDown={handleKeyDown}
           />
           <button type="button" className={styles.iconBtn} tabIndex={-1}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
               <line x1="8" y1="23" x2="16" y2="23" />
             </svg>
           </button>
+          <button
+            type="submit"
+            className={styles.sendBtn}
+            disabled={!value.trim()}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
         </div>
-        <button type="submit" className={styles.sendBtn} disabled={!value.trim()}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </button>
       </form>
     </>
   );
