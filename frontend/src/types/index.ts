@@ -8,9 +8,17 @@ export interface User {
 export interface Chatroom {
   id: string;
   roomName: string;
+  isDirect: boolean;
   createdById: string;
   createdBy: { firstName: string; lastName: string };
   _count: { participants: number };
+}
+
+export interface UserSearchResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
 }
 
 export interface Message {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { setMessages, setLoading, clearRoom } from './chatSlice';
+import { setLastMessage } from '../chatrooms/chatroomsSlice';
 import { getMessages } from './chatApi';
 import { useSocket } from './useSocket';
 import Avatar from '../../components/Avatar';

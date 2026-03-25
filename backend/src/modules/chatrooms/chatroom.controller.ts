@@ -36,3 +36,21 @@ export async function leaveChatroomHandler(req: Request, res: Response, next: Ne
     next(err);
   }
 }
+
+export async function listDirectRoomsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const rooms = await chatroomService.listDirectRooms(req.user!.id);
+    res.json(rooms);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function createDirectRoomHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const room = await chatroomService.findOrCreateDirectRoom(req.user!.id, req.body.targetUserId);
+    res.status(200).json(room);
+  } catch (err) {
+    next(err);
+  }
+}

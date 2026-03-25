@@ -407,3 +407,24 @@
   color: #9ca3af;
   font-size: 0.9rem;
 }
+
+/* ── Search results sections ───────────────────────────── */
+.searchSection {
+  margin-bottom: 8px;
+}
+
+.searchSectionLabel {
+  display: block;
+  padding: 6px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+}
+
+.emptyHint {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #9ca3af;
+}

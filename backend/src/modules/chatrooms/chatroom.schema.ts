@@ -5,3 +5,9 @@ export const createChatroomSchema = z.object({
 });
 
 export type CreateChatroomInput = z.infer<typeof createChatroomSchema>;
+
+export const createDirectRoomSchema = z.object({
+  targetUserId: z.string().uuid(),
+});
+
+export type CreateDirectRoomInput = z.infer<typeof createDirectRoomSchema>;

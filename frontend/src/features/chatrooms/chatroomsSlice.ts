@@ -36,7 +36,9 @@ const chatroomsSlice = createSlice({
       state.status = 'idle';
     },
     addChatroom(state, action: PayloadAction<Chatroom>) {
-      state.list.unshift(action.payload);
+      if (!state.list.some((r) => r.id === action.payload.id)) {
+        state.list.unshift(action.payload);
+      }
     },
     setLastMessage(state, action: PayloadAction<{ roomId: string; message: Message }>) {
       const { roomId, message } = action.payload;

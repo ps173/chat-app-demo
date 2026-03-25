@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
-import { setChatrooms, setLoading, setError } from '../chatrooms/chatroomsSlice';
-import { listChatrooms, joinChatroom } from '../chatrooms/chatroomsApi';
+import { setChatrooms, setLoading, setError, addChatroom } from '../chatrooms/chatroomsSlice';
+import { listChatrooms, listDirectRooms, joinChatroom, createChatroom, findOrCreateDirectRoom } from '../chatrooms/chatroomsApi';
 import { logout } from '../auth/authSlice';
 import Avatar from '../../components/Avatar';
 import CreateRoomModal from '../chatrooms/CreateRoomModal';
-import { createChatroom } from '../chatrooms/chatroomsApi';
-import { addChatroom } from '../chatrooms/chatroomsSlice';
+import { searchUsers } from '../users/usersApi';
+import type { UserSearchResult } from '../../types';
 import styles from './layout.module.css';
 
 function formatTime(iso: string): string {
@@ -24,21 +24,62 @@ export default function RoomsSidebar() {
 
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [userResults, setUserResults] = useState<UserSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     dispatch(setLoading());
-    listChatrooms()
-      .then((rooms) => dispatch(setChatrooms(rooms)))
+    Promise.all([listChatrooms(), listDirectRooms()])
+      .then(([rooms, dms]) => dispatch(setChatrooms([...rooms, ...dms])))
       .catch((err) => dispatch(setError((err as Error).message)));
   }, [dispatch]);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const filtered = list.filter((r) =>
     r.roomName.toLowerCase().includes(search.toLowerCase()),
   );
 
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setSearch(val);
+    setUserResults([]);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (val.length < 2) return;
+
+    debounceRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchUsers(val);
+        setUserResults(results);
+      } catch {
+        setUserResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  }
+
   async function handleRoomClick(roomId: string) {
     await joinChatroom(roomId).catch(() => {});
     navigate(`/chatrooms/${roomId}`);
+  }
+
+  async function handleUserClick(targetUserId: string) {
+    try {
+      const room = await findOrCreateDirectRoom(targetUserId);
+      dispatch(addChatroom(room));
+      navigate(`/chatrooms/${room.id}`);
+    } catch (err) {
+      console.error('Failed to open DM', err);
+    }
   }
 
   async function handleCreate(roomName: string) {
@@ -54,6 +95,8 @@ export default function RoomsSidebar() {
     navigate('/login');
   }
 
+  const isSearching = search.length >= 2;
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
@@ -65,43 +108,103 @@ export default function RoomsSidebar() {
           <input
             className={styles.searchInput}
             type="text"
-            placeholder="Search..."
+            placeholder="Search rooms or people..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
       </div>
 
       <div className={styles.roomList}>
-        {filtered.map((room) => {
-          const last = lastMessages[room.id];
-          const isActive = room.id === activeRoomId;
-          return (
-            <div
-              key={room.id}
-              className={`${styles.roomItem} ${isActive ? styles.active : ''}`}
-              onClick={() => handleRoomClick(room.id)}
-            >
-              <Avatar
-                firstName={room.createdBy.firstName}
-                lastName={room.createdBy.lastName}
-                size={46}
-                online
-              />
-              <div className={styles.roomMeta}>
-                <div className={styles.roomTopRow}>
-                  <span className={styles.roomItemName}>{room.roomName}</span>
-                  {last && <span className={styles.roomTime}>{formatTime(last.timestamp)}</span>}
+        {isSearching ? (
+          <>
+            <div className={styles.searchSection}>
+              <span className={styles.searchSectionLabel}>Rooms</span>
+              {filtered.length === 0 && (
+                <div className={styles.emptyHint}>No rooms match</div>
+              )}
+              {filtered.map((room) => {
+                const last = lastMessages[room.id];
+                const isActive = room.id === activeRoomId;
+                return (
+                  <div
+                    key={room.id}
+                    className={`${styles.roomItem} ${isActive ? styles.active : ''}`}
+                    onClick={() => handleRoomClick(room.id)}
+                  >
+                    <Avatar firstName={room.createdBy.firstName} lastName={room.createdBy.lastName} size={46} online />
+                    <div className={styles.roomMeta}>
+                      <div className={styles.roomTopRow}>
+                        <span className={styles.roomItemName}>{room.roomName}</span>
+                        {last && <span className={styles.roomTime}>{formatTime(last.timestamp)}</span>}
+                      </div>
+                      <div className={styles.roomBottomRow}>
+                        <span className={styles.lastMsg}>
+                          {last ? last.content : `by ${room.createdBy.firstName} ${room.createdBy.lastName}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className={styles.searchSection}>
+              <span className={styles.searchSectionLabel}>People</span>
+              {searchLoading && <div className={styles.emptyHint}>Searching…</div>}
+              {!searchLoading && userResults.length === 0 && (
+                <div className={styles.emptyHint}>No people found</div>
+              )}
+              {userResults.map((u) => (
+                <div
+                  key={u.id}
+                  className={styles.roomItem}
+                  onClick={() => handleUserClick(u.id)}
+                >
+                  <Avatar firstName={u.firstName} lastName={u.lastName} size={46} />
+                  <div className={styles.roomMeta}>
+                    <div className={styles.roomTopRow}>
+                      <span className={styles.roomItemName}>{u.firstName} {u.lastName}</span>
+                    </div>
+                    <div className={styles.roomBottomRow}>
+                      <span className={styles.lastMsg}>{u.email}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.roomBottomRow}>
-                  <span className={styles.lastMsg}>
-                    {last ? last.content : `by ${room.createdBy.firstName} ${room.createdBy.lastName}`}
-                  </span>
+              ))}
+            </div>
+          </>
+        ) : (
+          filtered.map((room) => {
+            const last = lastMessages[room.id];
+            const isActive = room.id === activeRoomId;
+            return (
+              <div
+                key={room.id}
+                className={`${styles.roomItem} ${isActive ? styles.active : ''}`}
+                onClick={() => handleRoomClick(room.id)}
+              >
+                <Avatar
+                  firstName={room.createdBy.firstName}
+                  lastName={room.createdBy.lastName}
+                  size={46}
+                  online
+                />
+                <div className={styles.roomMeta}>
+                  <div className={styles.roomTopRow}>
+                    <span className={styles.roomItemName}>{room.roomName}</span>
+                    {last && <span className={styles.roomTime}>{formatTime(last.timestamp)}</span>}
+                  </div>
+                  <div className={styles.roomBottomRow}>
+                    <span className={styles.lastMsg}>
+                      {last ? last.content : `by ${room.createdBy.firstName} ${room.createdBy.lastName}`}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {user && (

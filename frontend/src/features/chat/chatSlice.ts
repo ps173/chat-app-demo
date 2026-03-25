@@ -38,7 +38,12 @@ const chatSlice = createSlice({
       state,
       action: PayloadAction<{ messages: Message[]; nextCursor: string | null }>,
     ) {
-      state.messages = action.payload.messages;
+      // Merge with any messages already received via socket, deduplicating by messageId
+      const existingIds = new Set(action.payload.messages.map((m) => m.messageId));
+      const socketOnly = state.messages.filter((m) => !existingIds.has(m.messageId));
+      state.messages = [...action.payload.messages, ...socketOnly].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
       state.nextCursor = action.payload.nextCursor;
       state.status = 'idle';
     },
