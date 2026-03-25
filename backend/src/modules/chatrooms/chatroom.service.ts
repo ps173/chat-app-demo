@@ -1,14 +1,43 @@
-import { prisma } from '../../db/client';
-import { AppError } from '../../utils/AppError';
+import { prisma } from "../../db/client";
+import { AppError } from "../../utils/AppError";
 
-export async function listChatrooms() {
+const lastMessageInclude = {
+  messages: {
+    orderBy: { createdAt: "desc" as const },
+    take: 1,
+    include: { sender: { select: { firstName: true, lastName: true } } },
+  },
+};
+
+export async function listChatrooms(userId: string) {
   return prisma.chatroom.findMany({
-    where: { isDirect: false },
+    where: {
+      isDirect: false,
+      participants: { some: { id: userId } },
+    },
+    include: {
+      createdBy: { select: { firstName: true, lastName: true } },
+      _count: { select: { participants: true } },
+      ...lastMessageInclude,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function discoverChatrooms(userId: string, search?: string) {
+  return prisma.chatroom.findMany({
+    where: {
+      isDirect: false,
+      participants: { none: { id: userId } },
+      ...(search
+        ? { roomName: { contains: search, mode: "insensitive" } }
+        : {}),
+    },
     include: {
       createdBy: { select: { firstName: true, lastName: true } },
       _count: { select: { participants: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -31,11 +60,11 @@ export async function joinChatroom(userId: string, roomId: string) {
     where: { id: roomId },
     include: { participants: { where: { id: userId }, select: { id: true } } },
   });
-  if (!room) throw new AppError('Room not found', 404);
+  if (!room) throw new AppError("Room not found", 404);
 
   // DM rooms: only pre-added participants may join
   if (room.isDirect && room.participants.length === 0) {
-    throw new AppError('Room not found', 404);
+    throw new AppError("Room not found", 404);
   }
 
   return prisma.chatroom.update({
@@ -46,7 +75,7 @@ export async function joinChatroom(userId: string, roomId: string) {
 
 export async function leaveChatroom(userId: string, roomId: string) {
   const room = await prisma.chatroom.findUnique({ where: { id: roomId } });
-  if (!room) throw new AppError('Room not found', 404);
+  if (!room) throw new AppError("Room not found", 404);
 
   return prisma.chatroom.update({
     where: { id: roomId },
@@ -63,12 +92,16 @@ export async function listDirectRooms(userId: string) {
     include: {
       createdBy: { select: { firstName: true, lastName: true } },
       _count: { select: { participants: true } },
+      ...lastMessageInclude,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 }
 
-export async function findOrCreateDirectRoom(userId: string, targetUserId: string) {
+export async function findOrCreateDirectRoom(
+  userId: string,
+  targetUserId: string,
+) {
   // Find existing DM between exactly these two users
   const existing = await prisma.chatroom.findFirst({
     where: {
@@ -92,14 +125,14 @@ export async function findOrCreateDirectRoom(userId: string, targetUserId: strin
     where: { id: targetUserId },
     select: { firstName: true },
   });
-  if (!target) throw new AppError('User not found', 404);
+  if (!target) throw new AppError("User not found", 404);
 
   const self = await prisma.user.findUnique({
     where: { id: userId },
     select: { firstName: true },
   });
 
-  const roomName = `${self?.firstName ?? 'User'} & ${target.firstName}`;
+  const roomName = `${self?.firstName ?? "User"} & ${target.firstName}`;
 
   return prisma.chatroom.create({
     data: {

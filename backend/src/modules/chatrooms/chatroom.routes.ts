@@ -4,6 +4,7 @@ import { validate } from '../../middleware/validate';
 import { createChatroomSchema, createDirectRoomSchema } from './chatroom.schema';
 import {
   listChatroomsHandler,
+  discoverChatroomsHandler,
   listDirectRoomsHandler,
   createChatroomHandler,
   joinChatroomHandler,
@@ -16,6 +17,7 @@ export const chatroomRoutes = Router();
 chatroomRoutes.use(authenticate);
 
 chatroomRoutes.get('/', listChatroomsHandler);
+chatroomRoutes.get('/discover', discoverChatroomsHandler);
 chatroomRoutes.get('/direct', listDirectRoomsHandler);
 chatroomRoutes.post('/', validate(createChatroomSchema), createChatroomHandler);
 chatroomRoutes.post('/direct', validate(createDirectRoomSchema), createDirectRoomHandler);

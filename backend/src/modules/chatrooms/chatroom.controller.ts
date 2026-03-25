@@ -3,7 +3,17 @@ import * as chatroomService from './chatroom.service';
 
 export async function listChatroomsHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const rooms = await chatroomService.listChatrooms();
+    const rooms = await chatroomService.listChatrooms(req.user!.id);
+    res.json(rooms);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function discoverChatroomsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const search = typeof req.query['search'] === 'string' ? req.query['search'] : undefined;
+    const rooms = await chatroomService.discoverChatrooms(req.user!.id, search);
     res.json(rooms);
   } catch (err) {
     next(err);
