@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
-import { setCredentials, setError, setLoading } from './authSlice';
-import { signup } from './authApi';
-import styles from './auth.module.css';
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../hooks/useAppDispatch";
+import { setCredentials, setError, setLoading } from "./authSlice";
+import { signup } from "./authApi";
+import styles from "./auth.module.css";
 
 export default function SignupPage() {
   const dispatch = useAppDispatch();
@@ -11,10 +11,10 @@ export default function SignupPage() {
   const { status, error } = useAppSelector((s) => s.auth);
 
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
   });
 
   async function handleSubmit(e: FormEvent) {
@@ -23,7 +23,7 @@ export default function SignupPage() {
     try {
       const res = await signup(form);
       dispatch(setCredentials(res));
-      navigate('/chatrooms');
+      navigate("/chatrooms");
     } catch (err) {
       dispatch(setError((err as Error).message));
     }
@@ -34,27 +34,25 @@ export default function SignupPage() {
       <div className={styles.card}>
         <h1 className={styles.title}>Create an account</h1>
         <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor="firstName">First Name</label>
-              <input
-                id="firstName"
-                type="text"
-                required
-                value={form.firstName}
-                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="lastName">Last Name</label>
-              <input
-                id="lastName"
-                type="text"
-                required
-                value={form.lastName}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-              />
-            </div>
+          <div className={styles.field}>
+            <label htmlFor="firstName">First Name</label>
+            <input
+              id="firstName"
+              type="text"
+              required
+              value={form.firstName}
+              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+            />
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="lastName">Last Name</label>
+            <input
+              id="lastName"
+              type="text"
+              required
+              value={form.lastName}
+              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+            />
           </div>
           <div className={styles.field}>
             <label htmlFor="email">Email</label>
@@ -78,8 +76,12 @@ export default function SignupPage() {
             />
           </div>
           {error && <p className={styles.error}>{error}</p>}
-          <button type="submit" className={styles.submit} disabled={status === 'loading'}>
-            {status === 'loading' ? 'Creating account…' : 'Sign Up'}
+          <button
+            type="submit"
+            className={styles.submit}
+            disabled={status === "loading"}
+          >
+            {status === "loading" ? "Creating account…" : "Sign Up"}
           </button>
         </form>
         <p className={styles.footer}>

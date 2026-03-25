@@ -196,8 +196,10 @@ export default function RoomsSidebar() {
                     onClick={() => handleRoomClick(room.id)}
                   >
                     <Avatar
-                      firstName={room.roomName}
-                      lastName={room.roomName || " "}
+                      firstName={room.roomName.split(" ")[0] || " "}
+                      lastName={
+                        room.roomName.replace(" &", "").split(" ")[1] || " "
+                      }
                       size={46}
                       // online
                     />
@@ -270,7 +272,9 @@ export default function RoomsSidebar() {
               >
                 <Avatar
                   firstName={room.roomName.split(" ")[0] || " "}
-                  lastName={room.roomName.split(" ")[1] || " "}
+                  lastName={
+                    room.roomName.replace(" &", "").split(" ")[1] || " "
+                  }
                   size={46}
                   // online
                 />

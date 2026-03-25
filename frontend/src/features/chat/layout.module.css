@@ -22,7 +22,7 @@
 
 .sidebarTitle {
     font-size: 1.25rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #111;
     margin-bottom: 0.875rem;
 }
@@ -97,7 +97,7 @@
 }
 
 .roomItemName {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.9rem;
     color: #111;
     white-space: nowrap;
@@ -230,7 +230,7 @@
 .bubble {
     padding: 0.6rem 0.9rem;
     border-radius: 18px;
-    font-size: 0.9rem;
+    font-size: 14px;
     line-height: 1.45;
     word-break: break-word;
     display: flex;

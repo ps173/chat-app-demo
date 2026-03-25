@@ -103,7 +103,7 @@ export default function ChatPanel() {
         {room && (
           <Avatar
             firstName={room.roomName.split(" ")[0] || " "}
-            lastName={room.roomName.split(" ")[1] || " "}
+            lastName={room.roomName.replace(" &", "").split(" ")[1] || " "}
             size={38}
             // online
           />
